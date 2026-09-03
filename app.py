@@ -13,17 +13,19 @@ URL_TEMPLATE = os.environ.get("URL_TEMPLATE")
 print(URL_TEMPLATE)
 
 def fetch_timetable(kw):
-  url = URL_TEMPLATE.format(kw=kw)
-  try:
-    response = requests.get(
-        url, auth=HTTPBasicAuth(USERNAME, PASSWORD), timeout=10
-    )
-    if response.status_code == 200:
-      return response.text
-    else:
-      return f"<p style='color: red;'>Fehler beim Laden: HTTP Statuscode {response.status_code}</p>"
-  except Exception as e:
-    return f"<p style='color: red;'>Verbindungsfehler: {e}</p>"
+    url = URL_TEMPLATE.format(kw=kw) 
+    try:
+        response = requests.get(
+            url, auth=HTTPBasicAuth(USERNAME, PASSWORD), timeout=10
+        )
+        if response.status_code == 200:
+            # Erzwingt die automatische Erkennung der korrekten Zeichenkodierung (z.B. ISO-8859-1)
+            response.encoding = response.apparent_encoding
+            return response.text
+        else:
+            return f"<p style='color: red;'>Fehler beim Laden: HTTP Statuscode {response.status_code}</p>"
+    except Exception as e:
+        return f"<p style='color: red;'>Verbindungsfehler: {e}</p>"
 
 
 @app.route("/")
@@ -41,13 +43,12 @@ def index():
         <title>Stundenplan - Aktuelle KW {kw_str}</title>
     </head>
     <body style="font-family: sans-serif; padding: 20px;">
-        <h1>Stundenplan - Aktuelle Kalenderwoche ({kw_str})</h1>
-        <div style="margin-bottom: 20px;">
-            <a href="/next"><button style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Zur nächsten Woche (/next)</button></a>
-        </div>
-        <hr>
+        <h2>Aktuelle Kalenderwoche ({kw_str})</h2>
         <div style="margin-top: 20px;">
             {content}
+        </div>
+        <div style="margin-bottom: 20px;">
+            <a href="/next"><button style="padding: 10px 20px; font-size: 12pt; cursor: pointer;">Zur nächsten Woche</button></a>
         </div>
     </body>
     </html>
@@ -70,13 +71,12 @@ def next_week():
         <title>Stundenplan - Nächste KW {kw_str}</title>
     </head>
     <body style="font-family: sans-serif; padding: 20px;">
-        <h1>Stundenplan - Nächste Kalenderwoche ({kw_str})</h1>
-        <div style="margin-bottom: 20px;">
-            <a href="/"><button style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Zurück zur aktuellen Woche (/)</button></a>
-        </div>
-        <hr>
+        <h2>Nächste Kalenderwoche ({kw_str})</h2>
         <div style="margin-top: 20px;">
             {content}
+        </div>
+        <div style="margin-bottom: 20px;">
+            <a href="/"><button style="padding: 10px 20px; font-size: 12pt; cursor: pointer;">Aktuelle Woche</button></a>
         </div>
     </body>
     </html>
