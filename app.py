@@ -10,6 +10,7 @@ USERNAME = os.environ.get("USERNAME")
 PASSWORD = os.environ.get("PASSWORD")
 URL_TEMPLATE = os.environ.get("URL_TEMPLATE")
 
+print(URL_TEMPLATE)
 
 def fetch_timetable(kw):
   url = URL_TEMPLATE.format(kw=kw)
