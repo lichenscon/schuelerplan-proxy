@@ -6,9 +6,9 @@ from requests.auth import HTTPBasicAuth
 app = Flask(__name__)
 
 # Zugangsdaten und URL-Template (am besten später über Umgebungsvariablen steuern)
-USERNAME = os.environ("USERNAME")
-PASSWORD = os.environ("PASSWORD")
-URL_TEMPLATE = os.environ("URL_TEMPLATE")
+USERNAME = os.environ.get("USERNAME")
+PASSWORD = os.environ.get("PASSWORD")
+URL_TEMPLATE = os.environ.get("URL_TEMPLATE")
 
 
 def fetch_timetable(kw):
