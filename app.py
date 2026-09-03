@@ -1,19 +1,25 @@
 from datetime import datetime, timedelta
-from flask import Flask, render_template_string
-import requests, os
+import os
+from flask import Flask, url_for
+import requests
 from requests.auth import HTTPBasicAuth
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from werkzeug.serving import run_simple
 
 app = Flask(__name__)
 
-# Zugangsdaten und URL-Template (am besten später über Umgebungsvariablen steuern)
+# Zugangsdaten, URL-Template und Subpath aus Umgebungsvariablen
 USERNAME = os.environ.get("USERNAME")
 PASSWORD = os.environ.get("PASSWORD")
 URL_TEMPLATE = os.environ.get("URL_TEMPLATE")
+SUBPATH = os.environ.get("SUBPATH", "").rstrip("/")  # z. B. "/stundenplan"
 
 print(URL_TEMPLATE)
 
+
 def fetch_timetable(kw):
-    url = URL_TEMPLATE.format(kw=kw) 
+    # 'KW' in Großbuchstaben angepasst
+    url = URL_TEMPLATE.format(KW=kw)
     try:
         response = requests.get(
             url, auth=HTTPBasicAuth(USERNAME, PASSWORD), timeout=10
@@ -30,12 +36,12 @@ def fetch_timetable(kw):
 
 @app.route("/")
 def index():
-  now = datetime.now()
-  kw = now.isocalendar()[1]
-  kw_str = f"{kw:02d}"  # Zweistellig formatiert (z.B. "09")
-  content = fetch_timetable(kw_str)
+    now = datetime.now()
+    kw = now.isocalendar()[1]
+    kw_str = f"{kw:02d}"  # Zweistellig formatiert (z.B. "09")
+    content = fetch_timetable(kw_str)
 
-  html = f"""
+    html = f"""
     <!doctype html>
     <html lang="de">
     <head>
@@ -48,22 +54,22 @@ def index():
             {content}
         </div>
         <div style="margin-bottom: 20px;">
-            <a href="/next"><button style="padding: 10px 20px; font-size: 12pt; cursor: pointer;">Zur nächsten Woche</button></a>
+            <a href="{url_for('next_week')}"><button style="padding: 10px 20px; font-size: 12pt; cursor: pointer;">Zur nächsten Woche</button></a>
         </div>
     </body>
     </html>
     """
-  return html
+    return html
 
 
 @app.route("/next")
 def next_week():
-  next_date = datetime.now() + timedelta(days=7)
-  kw = next_date.isocalendar()[1]
-  kw_str = f"{kw:02d}"
-  content = fetch_timetable(kw_str)
+    next_date = datetime.now() + timedelta(days=7)
+    kw = next_date.isocalendar()[1]
+    kw_str = f"{kw:02d}"
+    content = fetch_timetable(kw_str)
 
-  html = f"""
+    html = f"""
     <!doctype html>
     <html lang="de">
     <head>
@@ -76,13 +82,22 @@ def next_week():
             {content}
         </div>
         <div style="margin-bottom: 20px;">
-            <a href="/"><button style="padding: 10px 20px; font-size: 12pt; cursor: pointer;">Aktuelle Woche</button></a>
+            <a href="{url_for('index')}"><button style="padding: 10px 20px; font-size: 12pt; cursor: pointer;">Aktuelle Woche</button></a>
         </div>
     </body>
     </html>
     """
-  return html
+    return html
 
+
+# WSGI App vorbereiten für Subpath-Routing
+if SUBPATH:
+    main_app = DispatcherMiddleware(
+        Flask("dummy"),
+        {SUBPATH: app},
+    )
+else:
+    main_app = app
 
 if __name__ == "__main__":
-  app.run(host="0.0.0.0", port=5000)
+    run_simple("0.0.0.0", 5000, main_app, use_reloader=True)
